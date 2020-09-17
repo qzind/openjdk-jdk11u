@@ -70,7 +70,6 @@ static NSSize ScaledImageSizeForStatusBar(NSSize imageSize, BOOL autosize) {
     menuDelegate = [[AWTTrayIconDelegate alloc] initWithTrayIcon:self];
     trackingArea = nil;
 
-    //[theItem setMenu: [menuDelegate getMenu]];
     theItem.button.action = @selector(mouseDown:);
     theItem.button.target = self;
     [self addTrackingArea];
@@ -89,6 +88,7 @@ static NSSize ScaledImageSizeForStatusBar(NSSize imageSize, BOOL autosize) {
                                                 options: options
                                                 owner: self
                                                 userInfo: nil];
+    //TODO
     // [[theItem button] addTrackingArea:trackingArea];
 }
 
@@ -139,7 +139,8 @@ static NSSize ScaledImageSizeForStatusBar(NSSize imageSize, BOOL autosize) {
     CGFloat itemLength = scaledSize.width + 2.0*kImageInset;
     [theItem setLength:itemLength];
     theItem.button.image = imagePtr;
-    // todo: theItem.button.image.template = whatever;
+    //TODO: Remove setTemplate(...), set directly
+    // theItem.button.image.template = isTemplate;
 
 }
 
@@ -149,7 +150,7 @@ static NSSize ScaledImageSizeForStatusBar(NSSize imageSize, BOOL autosize) {
 }
 
 -(void) deliverJavaMouseEvent: (NSEvent *) event {
-    //Todo: fix
+    //TODO
     // [AWTToolkit eventCountPlusPlus];
 
     // JNIEnv *env = [ThreadUtilities getJNIEnv];
@@ -199,8 +200,8 @@ static NSSize ScaledImageSizeForStatusBar(NSSize imageSize, BOOL autosize) {
 
 
 - (void) mouseDown:(NSEvent *)event {    
-    //todo [self deliverJavaMouseEvent: event];
-    //find CTrayIcon.getPopupMenuModel method and call it to get popup menu ptr.
+    //TODO [self deliverJavaMouseEvent: event];
+    //TODO find CTrayIcon.getPopupMenuModel method and call it to get popup menu ptr.
     JNIEnv *env = [ThreadUtilities getJNIEnv];
     static JNF_CLASS_CACHE(jc_CTrayIcon, "sun/lwawt/macosx/CTrayIcon");
     static JNF_MEMBER_CACHE(jm_getPopupMenuModel, jc_CTrayIcon, "getPopupMenuModel", "()J");
@@ -211,8 +212,8 @@ static NSSize ScaledImageSizeForStatusBar(NSSize imageSize, BOOL autosize) {
         NSMenu* menu = [cmenu menu];
         [menu setDelegate:menuDelegate];
         [theItem popUpStatusItemMenu: menu];
-        // todo what needsdisplay
-        // [menuDelegate setNeedsDisplay:YES];
+        //TODO
+        //[menuDelegate setNeedsDisplay:YES];
     }
 }
 
@@ -221,6 +222,7 @@ static NSSize ScaledImageSizeForStatusBar(NSSize imageSize, BOOL autosize) {
 }
 
 - (void) mouseDragged:(id)event {
+    //TODO
     // [self deliverJavaMouseEvent: event];
 }
 
@@ -265,6 +267,7 @@ static NSSize ScaledImageSizeForStatusBar(NSSize imageSize, BOOL autosize) {
 
     return self;
 }
+
 -(void) dealloc {
     [image release];
     [super dealloc];

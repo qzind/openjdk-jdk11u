@@ -90,7 +90,6 @@ public class TrayIcon {
     private String tooltip;
     private PopupMenu popup;
     private boolean autosize;
-    private boolean template;
     private int id;
     private String actionCommand;
 
