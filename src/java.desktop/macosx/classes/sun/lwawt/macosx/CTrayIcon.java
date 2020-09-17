@@ -104,6 +104,7 @@ public class CTrayIcon extends CFRetainedResource implements TrayIconPeer {
     }
 
     private native long nativeCreate();
+    public native void nativeSetTemplate(long trayIconModel, boolean template);
 
     //invocation from the AWTTrayIcon.m
     public long getPopupMenuModel() {
@@ -193,7 +194,22 @@ public class CTrayIcon extends CFRetainedResource implements TrayIconPeer {
         }
     }
 
+    public void setTemplate(boolean template) {
+        execute(ptr -> nativeSetTemplate(ptr, template));        
+    }
+
     void updateNativeImage(Image image) {
+        // AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
+            boolean isTemplateEnabled = Boolean.parseBoolean(System.getProperty("sun.awt.enableTemplateImages", "false"));
+            //set system property if not yet assigned
+            // System.setProperty(isTemplate, ""+isTemplateEnabled);
+            // Todo: is this line needed? is any of this needed
+            // initAppkit(ThreadGroupUtils.getRootThreadGroup(),
+            //            GraphicsEnvironment.isHeadless());
+        //     return null;
+        // });
+
+
         MediaTracker tracker = new MediaTracker(new Button(""));
         tracker.addImage(image, 0);
         try {
@@ -214,6 +230,7 @@ public class CTrayIcon extends CFRetainedResource implements TrayIconPeer {
                     setNativeImage(ptr, imagePtr, imageAutoSize);
                 });
             });
+            setTemplate(isTemplateEnabled);
         }
     }
 
