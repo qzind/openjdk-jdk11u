@@ -68,28 +68,25 @@ static NSSize ScaledImageSizeForStatusBar(NSSize imageSize, BOOL autosize) {
     [theItem retain];
 
     menuDelegate = [[AWTTrayIconDelegate alloc] initWithTrayIcon:self];
-    trackingArea = nil;
 
+    [theItem.button sendActionOn: NSEventMaskLeftMouseDown | NSEventMaskRightMouseDown];
     theItem.button.action = @selector(mouseDown:);
     theItem.button.target = self;
-    [self addTrackingArea];
+
+    trackingArea = [[NSTrackingArea alloc] initWithRect: CGRectZero
+                                            options: NSTrackingMouseMoved |
+                                                NSTrackingInVisibleRect |
+                                                NSTrackingActiveAlways
+                                            owner: self
+                                            userInfo: nil];
+
+    [[theItem button] addTrackingArea:trackingArea];
+
     return self;
 }
 
 -(void) setMenu:(NSMenu *) menu{
     [theItem setMenu: menu];
-}
-
-- (void)addTrackingArea {
-    NSTrackingAreaOptions options = NSTrackingMouseMoved |
-                                    NSTrackingInVisibleRect |
-                                    NSTrackingActiveAlways;
-    trackingArea = [[NSTrackingArea alloc] initWithRect: [[theItem button] bounds]
-                                                options: options
-                                                owner: self
-                                                userInfo: nil];
-    //TODO
-    // [[theItem button] addTrackingArea:trackingArea];
 }
 
 -(void) dealloc {
@@ -128,7 +125,7 @@ static NSSize ScaledImageSizeForStatusBar(NSSize imageSize, BOOL autosize) {
     return peer;
 }
 
-- (void) setImage:(NSImage *) imagePtr sizing:(BOOL)autosize {
+- (void) setImage:(NSImage *) imagePtr sizing:(BOOL)autosize isTemplate:(BOOL)template {
     NSSize imageSize = [imagePtr size];
     NSSize scaledSize = ScaledImageSizeForStatusBar(imageSize, autosize);
     if (imageSize.width != scaledSize.width ||
@@ -139,69 +136,61 @@ static NSSize ScaledImageSizeForStatusBar(NSSize imageSize, BOOL autosize) {
     CGFloat itemLength = scaledSize.width + 2.0*kImageInset;
     [theItem setLength:itemLength];
     theItem.button.image = imagePtr;
-    //TODO: Remove setTemplate(...), set directly
-    // theItem.button.image.template = isTemplate;
 
-}
-
-- (void) setTemplate:(BOOL)template {
     [[[theItem button] image] setTemplate: template];
     [[theItem button] setNeedsDisplay: true];
 }
 
 -(void) deliverJavaMouseEvent: (NSEvent *) event {
-    //TODO
-    // [AWTToolkit eventCountPlusPlus];
+    [AWTToolkit eventCountPlusPlus];
 
-    // JNIEnv *env = [ThreadUtilities getJNIEnv];
+    JNIEnv *env = [ThreadUtilities getJNIEnv];
 
-    // NSPoint eventLocation = [event locationInWindow];
+    NSPoint eventLocation = [event locationInWindow];
 
-    // NSPoint localPoint = [[theItem button] convertPoint: eventLocation fromView: nil];
-    // localPoint.y = [[theItem button] bounds].size.height - localPoint.y;
+    NSPoint localPoint = [[theItem button] convertPoint: eventLocation fromView: nil];
+    localPoint.y = [[theItem button] bounds].size.height - localPoint.y;
 
-    // // NSPoint localPoint = [menuDelegate convertPoint: eventLocation fromView: nil];
-    // // localPoint.y = [menuDelegate bounds].size.height - localPoint.y;
+    NSPoint absP = [NSEvent mouseLocation];
+    NSEventType type = [event type];
 
-    // NSPoint absP = [NSEvent mouseLocation];
-    // NSEventType type = [event type];
+    absP = ConvertNSScreenPoint(NULL, absP);
+    jint clickCount;
 
-    // absP = ConvertNSScreenPoint(NULL, absP);
-    // jint clickCount;
+    clickCount = [event clickCount];
 
-    // clickCount = [event clickCount];
+    jdouble deltaX = [event deltaX];
+    jdouble deltaY = [event deltaY];
+    if ([AWTToolkit hasPreciseScrollingDeltas: event]) {
+        deltaX = [event scrollingDeltaX] * 0.1;
+        deltaY = [event scrollingDeltaY] * 0.1;
+    }
 
-    // jdouble deltaX = [event deltaX];
-    // jdouble deltaY = [event deltaY];
-    // if ([AWTToolkit hasPreciseScrollingDeltas: event]) {
-    //     deltaX = [event scrollingDeltaX] * 0.1;
-    //     deltaY = [event scrollingDeltaY] * 0.1;
-    // }
+    static JNF_CLASS_CACHE(jc_NSEvent, "sun/lwawt/macosx/NSEvent");
+    static JNF_CTOR_CACHE(jctor_NSEvent, jc_NSEvent, "(IIIIIIIIDDI)V");
+    jobject jEvent = JNFNewObject(env, jctor_NSEvent,
+                                  [event type],
+                                  [event modifierFlags],
+                                  clickCount,
+                                  [event buttonNumber],
+                                  (jint)localPoint.x, (jint)localPoint.y,
+                                  (jint)absP.x, (jint)absP.y,
+                                  deltaY,
+                                  deltaX,
+                                  [AWTToolkit scrollStateWithEvent: event]);
+    CHECK_NULL(jEvent);
 
-    // static JNF_CLASS_CACHE(jc_NSEvent, "sun/lwawt/macosx/NSEvent");
-    // static JNF_CTOR_CACHE(jctor_NSEvent, jc_NSEvent, "(IIIIIIIIDDI)V");
-    // jobject jEvent = JNFNewObject(env, jctor_NSEvent,
-    //                               [event type],
-    //                               [event modifierFlags],
-    //                               clickCount,
-    //                               [event buttonNumber],
-    //                               (jint)localPoint.x, (jint)localPoint.y,
-    //                               (jint)absP.x, (jint)absP.y,
-    //                               deltaY,
-    //                               deltaX,
-    //                               [AWTToolkit scrollStateWithEvent: event]);
-    // CHECK_NULL(jEvent);
-
-    // static JNF_CLASS_CACHE(jc_TrayIcon, "sun/lwawt/macosx/CTrayIcon");
-    // static JNF_MEMBER_CACHE(jm_handleMouseEvent, jc_TrayIcon, "handleMouseEvent", "(Lsun/lwawt/macosx/NSEvent;)V");
-    // JNFCallVoidMethod(env, peer, jm_handleMouseEvent, jEvent);
-    // (*env)->DeleteLocalRef(env, jEvent);
+    static JNF_CLASS_CACHE(jc_TrayIcon, "sun/lwawt/macosx/CTrayIcon");
+    static JNF_MEMBER_CACHE(jm_handleMouseEvent, jc_TrayIcon, "handleMouseEvent", "(Lsun/lwawt/macosx/NSEvent;)V");
+    JNFCallVoidMethod(env, peer, jm_handleMouseEvent, jEvent);
+    (*env)->DeleteLocalRef(env, jEvent);
 }
 
 
-- (void) mouseDown:(NSEvent *)event {    
-    //TODO [self deliverJavaMouseEvent: event];
-    //TODO find CTrayIcon.getPopupMenuModel method and call it to get popup menu ptr.
+- (void) mouseDown:(id)sender {    
+    [self deliverJavaMouseEvent: [NSApp currentEvent]];
+
+    //find CTrayIcon.getPopupMenuModel method and call it to get popup menu ptr.
     JNIEnv *env = [ThreadUtilities getJNIEnv];
     static JNF_CLASS_CACHE(jc_CTrayIcon, "sun/lwawt/macosx/CTrayIcon");
     static JNF_MEMBER_CACHE(jm_getPopupMenuModel, jc_CTrayIcon, "getPopupMenuModel", "()J");
@@ -212,18 +201,16 @@ static NSSize ScaledImageSizeForStatusBar(NSSize imageSize, BOOL autosize) {
         NSMenu* menu = [cmenu menu];
         [menu setDelegate:menuDelegate];
         [theItem popUpStatusItemMenu: menu];
-        //TODO
-        //[menuDelegate setNeedsDisplay:YES];
     }
 }
+
 
 - (void) mouseUp:(NSEvent *)event {
     [self deliverJavaMouseEvent: event];
 }
 
-- (void) mouseDragged:(id)event {
-    //TODO
-    // [self deliverJavaMouseEvent: event];
+- (void) mouseDragged:(NSEvent *)event {
+    [self deliverJavaMouseEvent: event];
 }
 
 - (void) mouseMoved: (NSEvent *)event {
@@ -341,23 +328,6 @@ JNIEXPORT void JNICALL Java_java_awt_TrayIcon_initIDs
 }
 
 /*
- * Class: sun_lwawt_macosx_CTrayIcon
- * Method: nativeSetTemplate
- * Signature: (JZ)V
- */
-JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CTrayIcon_nativeSetTemplate
-(JNIEnv *env, jobject self, jlong model, BOOL template) {
-JNF_COCOA_ENTER(env);
-
-    AWTTrayIcon *icon = jlong_to_ptr(model);
-    [ThreadUtilities performOnMainThreadWaiting:NO block:^(){
-        [icon setTemplate:template];
-    }];
-
-JNF_COCOA_EXIT(env);
-}
-
-/*
  * Class:     sun_lwawt_macosx_CTrayIcon
  * Method:    nativeSetToolTip
  * Signature: (JLjava/lang/String;)V
@@ -378,15 +348,15 @@ JNF_COCOA_EXIT(env);
 /*
  * Class:     sun_lwawt_macosx_CTrayIcon
  * Method:    setNativeImage
- * Signature: (JJZ)V
+ * Signature: (JJZZ)V
  */
 JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CTrayIcon_setNativeImage
-(JNIEnv *env, jobject self, jlong model, jlong imagePtr, jboolean autosize) {
+(JNIEnv *env, jobject self, jlong model, jlong imagePtr, jboolean autosize, jboolean template) {
 JNF_COCOA_ENTER(env);
 
     AWTTrayIcon *icon = jlong_to_ptr(model);
     [ThreadUtilities performOnMainThreadWaiting:YES block:^(){
-        [icon setImage:jlong_to_ptr(imagePtr) sizing:autosize];
+        [icon setImage:jlong_to_ptr(imagePtr) sizing:autosize isTemplate:template];
     }];
 
 JNF_COCOA_EXIT(env);

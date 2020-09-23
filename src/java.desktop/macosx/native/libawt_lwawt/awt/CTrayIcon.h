@@ -42,7 +42,7 @@ extern "C" {
 /*
  * AWTTrayIcon
  */
-@interface AWTTrayIcon : NSObject {
+@interface AWTTrayIcon : NSResponder {
     jobject peer;
     AWTTrayIconDelegate *menuDelegate;
     NSStatusItem *theItem;
@@ -53,15 +53,14 @@ extern "C" {
 - (void) setTooltip:(NSString *)tooltip;
 - (NSStatusItem *)theItem;
 - (jobject) peer;
-- (void) setImage:(NSImage *) imagePtr sizing:(BOOL)autosize;
-- (void) setTemplate:(BOOL)template;
+- (void) setImage:(NSImage *) imagePtr sizing:(BOOL)autosize isTemplate:(BOOL)template;
 - (NSPoint) getLocationOnScreen;
 - (void) deliverJavaMouseEvent:(NSEvent*) event;
 - (void) setMenu:(NSMenu *)menu;
 - (void) mouseDown:(id)sender;
 - (void) mouseUp:(NSEvent *)event;
 - (void) mouseDragged:(NSEvent *)event;
-- (void) mouseMoved: (id)event;
+- (void) mouseMoved: (NSEvent *)event;
 - (void) rightMouseDown:(NSEvent *)event;
 - (void) rightMouseUp:(NSEvent *)event;
 - (void) rightMouseDragged:(NSEvent *)event;
