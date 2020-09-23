@@ -127,7 +127,7 @@ static NSSize ScaledImageSizeForStatusBar(NSSize imageSize, BOOL autosize) {
     return peer;
 }
 
-- (void) setImage:(NSImage *) imagePtr sizing:(BOOL)autosize imageTemplate:(BOOL)isTemplate {
+- (void) setImage:(NSImage *) imagePtr sizing:(BOOL)autosize template:(BOOL)isTemplate {
     NSSize imageSize = [imagePtr size];
     NSSize scaledSize = ScaledImageSizeForStatusBar(imageSize, autosize);
     if (imageSize.width != scaledSize.width ||
@@ -358,7 +358,7 @@ JNF_COCOA_ENTER(env);
 
     AWTTrayIcon *icon = jlong_to_ptr(model);
     [ThreadUtilities performOnMainThreadWaiting:YES block:^(){
-        [icon setImage:jlong_to_ptr(imagePtr) sizing:autosize imageTemplate:isTemplate];
+        [icon setImage:jlong_to_ptr(imagePtr) sizing:autosize template:isTemplate];
     }];
 
 JNF_COCOA_EXIT(env);
