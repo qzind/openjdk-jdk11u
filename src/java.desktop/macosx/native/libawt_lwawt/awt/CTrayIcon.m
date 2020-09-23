@@ -99,6 +99,8 @@ static NSSize ScaledImageSizeForStatusBar(NSSize imageSize, BOOL autosize) {
     // the item's view to nil: it can lead to a crash in some scenarios.
     // The item will release the view later on, so just set the view's image
     // and tray icon to nil since we are done with it.
+ 
+    // TODO: Handle dealloc for resources
     // [menuDelegate setImage: nil];
     // [menuDelegate setTrayIcon: nil];
     // [menuDelegate release];
@@ -125,7 +127,7 @@ static NSSize ScaledImageSizeForStatusBar(NSSize imageSize, BOOL autosize) {
     return peer;
 }
 
-- (void) setImage:(NSImage *) imagePtr sizing:(BOOL)autosize isTemplate:(BOOL)template {
+- (void) setImage:(NSImage *) imagePtr sizing:(BOOL)autosize imageTemplate:(BOOL)isTemplate {
     NSSize imageSize = [imagePtr size];
     NSSize scaledSize = ScaledImageSizeForStatusBar(imageSize, autosize);
     if (imageSize.width != scaledSize.width ||
@@ -137,7 +139,7 @@ static NSSize ScaledImageSizeForStatusBar(NSSize imageSize, BOOL autosize) {
     [theItem setLength:itemLength];
     theItem.button.image = imagePtr;
 
-    [[[theItem button] image] setTemplate: template];
+    [[[theItem button] image] setTemplate: isTemplate];
     [[theItem button] setNeedsDisplay: true];
 }
 
@@ -351,12 +353,12 @@ JNF_COCOA_EXIT(env);
  * Signature: (JJZZ)V
  */
 JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CTrayIcon_setNativeImage
-(JNIEnv *env, jobject self, jlong model, jlong imagePtr, jboolean autosize, jboolean template) {
+(JNIEnv *env, jobject self, jlong model, jlong imagePtr, jboolean autosize, jboolean isTemplate) {
 JNF_COCOA_ENTER(env);
 
     AWTTrayIcon *icon = jlong_to_ptr(model);
     [ThreadUtilities performOnMainThreadWaiting:YES block:^(){
-        [icon setImage:jlong_to_ptr(imagePtr) sizing:autosize isTemplate:template];
+        [icon setImage:jlong_to_ptr(imagePtr) sizing:autosize imageTemplate:isTemplate];
     }];
 
 JNF_COCOA_EXIT(env);

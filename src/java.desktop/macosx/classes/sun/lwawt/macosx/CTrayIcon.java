@@ -194,7 +194,7 @@ public class CTrayIcon extends CFRetainedResource implements TrayIconPeer {
     }
 
     void updateNativeImage(Image image) {
-        boolean isTemplateEnabled = Boolean.parseBoolean(System.getProperty("sun.awt.enableTemplateImages", "false"));
+        boolean imageTemplate = Boolean.parseBoolean(System.getProperty("sun.awt.enableTemplateImages", "false"));
 
         MediaTracker tracker = new MediaTracker(new Button(""));
         tracker.addImage(image, 0);
@@ -213,7 +213,7 @@ public class CTrayIcon extends CFRetainedResource implements TrayIconPeer {
         if (cimage != null) {
             cimage.execute(imagePtr -> {
                 execute(ptr -> {
-                    setNativeImage(ptr, imagePtr, imageAutoSize, isTemplateEnabled);
+                    setNativeImage(ptr, imagePtr, imageAutoSize, imageTemplate);
                 });
             });
         }
